@@ -476,7 +476,15 @@ app.get("/tv/chamada", (req, res) => {
         historico: db.tvHistorico
     });
 });
-
+app.delete("/triagens/:id", (req, res) => {
+  const db = readDB();
+  const id = Number(req.params.id);
+  const i = db.triagens.findIndex(t => t.id === id);
+  if (i === -1) return res.status(404).json({ erro: "Não achado" });
+  db.triagens.splice(i, 1);
+  writeDB(db);
+  res.json({ ok: true });
+});
 // INICIAR SERVIDOR
 app.listen(PORT, "0.0.0.0", () => {
     console.log("==================================");
