@@ -6,23 +6,34 @@ const cors = require("cors");
 
 const app = express();
 
+// ======================================
 // CONFIGURAÇÕES
+// ======================================
+
 app.use(express.json());
 app.use(cors());
 
-app.use(express.static(path.join(__dirname, "../frontend")));
+app.use(express.static(
+  path.join(__dirname, "../frontend")
+));
 
+// ======================================
 // BANCO DE DADOS
-const DB_FILE = path.join(__dirname, "db.json");
+// ======================================
+
+// O banco está dentro da pasta backend
+const DB_FILE = path.join(
+  __dirname,
+  "../backend/db.json"
+);
+
+console.log("Caminho do banco:", DB_FILE);
 
 function readDB() {
   if (!fs.existsSync(DB_FILE)) {
-    return {
-      usuarios: [],
-      pacientes: [],
-      triagens: [],
-      consultas: []
-    };
+    throw new Error(
+      "Arquivo db.json não encontrado em: " + DB_FILE
+    );
   }
 
   try {
@@ -36,8 +47,9 @@ function readDB() {
       triagens: Array.isArray(data.triagens) ? data.triagens : [],
       consultas: Array.isArray(data.consultas) ? data.consultas : []
     };
+
   } catch (error) {
-    console.error("Erro ao ler banco de dados:", error);
+    console.error("Erro ao ler banco:", error);
     throw error;
   }
 }
@@ -50,20 +62,32 @@ function writeDB(data) {
   );
 }
 
+// ======================================
 // ROTA INICIAL
+// ======================================
+
 app.get("/", (req, res) => {
   res.send("Sistema Hospitalar funcionando!");
 });
 
+// ======================================
 // LOGIN
+// ======================================
+
 app.post("/login", (req, res) => {
   try {
     const db = readDB();
 
-    const usuario = String(req.body.usuario || "").trim();
-    const senha = String(req.body.senha || "");
+    const usuario = String(
+      req.body.usuario || ""
+    ).trim();
+
+    const senha = String(
+      req.body.senha || ""
+    );
 
     console.log("Tentativa de login:", usuario);
+
     console.log(
       "Usuários encontrados:",
       db.usuarios.map(u => u.usuario)
@@ -82,7 +106,7 @@ app.post("/login", (req, res) => {
 
     console.log("Login realizado:", usuario);
 
-    res.json({
+    return res.json({
       usuario: user.usuario,
       tipo: user.tipo
     });
@@ -90,71 +114,107 @@ app.post("/login", (req, res) => {
   } catch (error) {
     console.error("Erro no login:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       erro: "Erro interno ao realizar login"
     });
   }
 });
 
+// ======================================
 // ATENDIMENTO
+// ======================================
+
 app.post("/atendimento", (req, res) => {
-  const db = readDB();
+  try {
+    const db = readDB();
 
-  const paciente = {
-    id: Date.now(),
-    nome: req.body.nome,
-    cpf: req.body.cpf,
-    tipo: req.body.tipo,
-    status: "triagem",
-    createdAt: new Date()
-  };
+    const paciente = {
+      id: Date.now(),
+      nome: req.body.nome,
+      cpf: req.body.cpf,
+      tipo: req.body.tipo,
+      status: "triagem",
+      createdAt: new Date()
+    };
 
-  db.pacientes.push(paciente);
-  writeDB(db);
+    db.pacientes.push(paciente);
+    writeDB(db);
 
-  res.json(paciente);
-});
+    res.json(paciente);
 
-// TRIAGEM
-app.post("/triagem", (req, res) => {
-  const db = readDB();
-
-  let risco = req.body.risco;
-  const temperatura = Number(req.body.temperatura);
-
-  if (temperatura >= 39) {
-    risco = "vermelho";
-  } else if (temperatura >= 38) {
-    risco = "amarelo";
-  } else if (!risco) {
-    risco = "verde";
+  } catch (error) {
+    console.error("Erro no atendimento:", error);
+    res.status(500).json({
+      erro: "Erro ao cadastrar paciente"
+    });
   }
-
-  const triagem = {
-    id: Date.now(),
-    nome: req.body.nome,
-    sintoma: req.body.sintoma,
-    temperatura: req.body.temperatura,
-    alergia: req.body.alergia,
-    observacao: req.body.observacao,
-    risco,
-    status: "aguardando_medico",
-    createdAt: new Date()
-  };
-
-  db.triagens.push(triagem);
-  writeDB(db);
-
-  res.json(triagem);
 });
 
+// ======================================
+// TRIAGEM
+// ======================================
+
+app.post("/triagem", (req, res) => {
+  try {
+    const db = readDB();
+
+    let risco = req.body.risco;
+    const temperatura = Number(req.body.temperatura);
+
+    if (temperatura >= 39) {
+      risco = "vermelho";
+    } else if (temperatura >= 38) {
+      risco = "amarelo";
+    } else if (!risco) {
+      risco = "verde";
+    }
+
+    const triagem = {
+      id: Date.now(),
+      nome: req.body.nome,
+      sintoma: req.body.sintoma,
+      temperatura: req.body.temperatura,
+      alergia: req.body.alergia,
+      observacao: req.body.observacao,
+      risco,
+      status: "aguardando_medico",
+      createdAt: new Date()
+    };
+
+    db.triagens.push(triagem);
+    writeDB(db);
+
+    res.json(triagem);
+
+  } catch (error) {
+    console.error("Erro na triagem:", error);
+    res.status(500).json({
+      erro: "Erro ao registrar triagem"
+    });
+  }
+});
+
+// ======================================
 // LISTAR TRIAGENS
+// ======================================
+
 app.get("/triagens", (req, res) => {
-  const db = readDB();
-  res.json(db.triagens);
+  try {
+    const db = readDB();
+    res.json(db.triagens);
+
+  } catch (error) {
+    console.error("Erro ao listar triagens:", error);
+    res.status(500).json({
+      erro: "Erro ao buscar triagens"
+    });
+  }
 });
 
+// ======================================
 // LISTA DE MEDICAÇÕES
+// ======================================
+
 app.get("/lista-medicacoes", (req, res) => {
   res.json([
     "Dipirona",
@@ -170,39 +230,93 @@ app.get("/lista-medicacoes", (req, res) => {
   ]);
 });
 
+// ======================================
 // CONSULTA
+// ======================================
+
 app.post("/consulta", (req, res) => {
-  const db = readDB();
+  try {
+    const db = readDB();
 
-  const consulta = {
-    id: Date.now(),
-    paciente: req.body.paciente,
-    diagnostico: req.body.diagnostico,
-    medicacao: req.body.medicacao,
-    obs: req.body.obs,
-    createdAt: new Date()
-  };
+    const consulta = {
+      id: Date.now(),
+      paciente: req.body.paciente,
+      diagnostico: req.body.diagnostico,
+      medicacao: req.body.medicacao,
+      obs: req.body.obs,
+      createdAt: new Date()
+    };
 
-  db.consultas.push(consulta);
-  writeDB(db);
+    db.consultas.push(consulta);
+    writeDB(db);
 
-  res.json(consulta);
+    res.json(consulta);
+
+  } catch (error) {
+    console.error("Erro na consulta:", error);
+    res.status(500).json({
+      erro: "Erro ao registrar consulta"
+    });
+  }
 });
 
+// ======================================
 // MEDICAÇÕES
+// ======================================
+
 app.get("/medicacoes", (req, res) => {
-  const db = readDB();
-  res.json(db.consultas);
+  try {
+    const db = readDB();
+    res.json(db.consultas);
+
+  } catch (error) {
+    console.error("Erro ao buscar medicações:", error);
+    res.status(500).json({
+      erro: "Erro ao buscar medicações"
+    });
+  }
 });
 
+// ======================================
+// VERIFICAR BANCO
+// ======================================
+
+app.get("/status-banco", (req, res) => {
+  try {
+    const db = readDB();
+
+    res.json({
+      funcionando: true,
+      usuarios: db.usuarios.length,
+      pacientes: db.pacientes.length,
+      triagens: db.triagens.length,
+      consultas: db.consultas.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      funcionando: false,
+      erro: error.message
+    });
+  }
+});
+
+// ======================================
 // INICIALIZAÇÃO DO SERVIDOR
+// ======================================
+
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Sistema Hospitalar rodando na porta ${PORT}`);
+    console.log(
+      `Sistema Hospitalar rodando na porta ${PORT}`
+    );
   });
 }
 
+// ======================================
 // EXPORTAÇÃO
+// ======================================
+
 module.exports = app;
