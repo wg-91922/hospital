@@ -300,7 +300,13 @@ app.get("/status-banco", (req, res) => {
     });
   }
 });
-
+app.delete("/triagens/:id", (req, res) => {
+  const db = readDB();
+  const id = Number(req.params.id);
+  db.triagens = db.triagens.filter(t => t.id !== id);
+  writeDB(db);
+  res.json({ ok: true });
+});
 // ======================================
 // INICIALIZAÇÃO DO SERVIDOR
 // ======================================
