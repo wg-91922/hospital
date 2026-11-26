@@ -1,11 +1,10 @@
-
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -47,9 +46,6 @@ function readDB() {
 
     if (db.estoque.length === 0) {
         db.estoque = estoqueInicial.map(m => ({ ...m }));
-    }
-
-    if (!fs.existsSync(DB_FILE)) {
         writeDB(db);
     }
 
@@ -325,7 +321,18 @@ app.delete("/estoque/:id", (req, res) => {
 
 app.get("/lista-medicacoes", (req, res) => {
     const db = readDB();
-    res.json(db.estoque.filter(m => m.quantidade > 0));
+
+    res.json(
+        db.estoque
+            .filter(m => (m.quantidade ?? 0) > 0)
+            .map(m => ({
+                id: m.id,
+                nome: m.nome,
+                quantidade: m.quantidade ?? 0,
+                unidade: m.unidade || "unidades",
+                categoria: m.categoria || "Geral"
+            }))
+    );
 });
 
 // CONSULTAS
@@ -384,7 +391,9 @@ app.post("/consulta", (req, res) => {
 
     res.status(201).json({
         mensagem: "Consulta salva e estoque atualizado!",
-        consulta
+        consulta,
+        estoqueAtual: medicamentoEstoque.quantidade,
+        unidade: medicamentoEstoque.unidade
     });
 });
 
