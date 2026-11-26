@@ -32,26 +32,21 @@ body{background:#f1f3f6;min-height:100vh;color:#fff;overflow:hidden}
 <div class="box logo-box"><div class="logo-text">Sistema Hospitalar</div></div>
 </div></div>
 <script>
-let ultimaChamadaId=null;
-async function atualizar(){
-  try{
-    const resposta=await fetch("/tv/chamada",{cache:"no-store"});if(!resposta.ok) throw new Error("Erro ao consultar chamadas.");
-    const data=await resposta.json();const chamada=data.chamada;const historico=data.historico||[];
-    const patientName=document.getElementById("patient-name");const patientBox=document.querySelector(".patient-box");
-    if(chamada){
-      document.getElementById("local-tipo").textContent=chamada.localTipo||"GUICHÊ";
-      document.getElementById("local-numero").textContent=chamada.localNumero||"--";
-      patientName.textContent=chamada.paciente||"AGUARDANDO...";patientName.classList.remove("aguardando");
-      if(chamada.id!==ultimaChamadaId){ultimaChamadaId=chamada.id;patientBox.classList.remove("flash");void patientBox.offsetWidth;patientBox.classList.add("flash");}
-    }else{
-      document.getElementById("local-tipo").textContent="GUICHÊ";document.getElementById("local-numero").textContent="--";
-      patientName.textContent="AGUARDANDO...";patientName.classList.add("aguardando");
+async function atualizar() {
+  try {
+    const r = await fetch("/tv/chamada");
+    const d = await r.json();
+    const c = d.chamada;
+    if (c) {
+      document.getElementById("nomePaciente").textContent = c.paciente;
+      document.getElementById("guiche").textContent = c.localTipo + " " + c.localNumero;
+      const hist = document.getElementById("historico");
+      if (hist) hist.innerHTML = (d.historico||[]).map(h => `<div>${h.paciente} - ${h.localTipo} ${h.localNumero}</div>`).join("");
     }
-    const lista=document.getElementById("history-list");lista.innerHTML="";
-    historico.slice(0,4).forEach(item=>{const li=document.createElement("li");li.textContent=`${item.localTipo||"GUICHÊ"} ${item.localNumero||"--"} - ${item.paciente||"Paciente"}`;lista.appendChild(li);});
-  }catch(erro){console.error("Erro ao atualizar o telão:",erro);}
+  } catch(e) {}
 }
-atualizar();setInterval(atualizar,2000);
+setInterval(atualizar, 2000);
+atualizar();
 </script>
 </body>
 </html>
