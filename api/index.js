@@ -31,10 +31,10 @@ function readDB() {
     );
 
     return {
-      usuarios: data.usuarios || [],
-      pacientes: data.pacientes || [],
-      triagens: data.triagens || [],
-      consultas: data.consultas || []
+      usuarios: Array.isArray(data.usuarios) ? data.usuarios : [],
+      pacientes: Array.isArray(data.pacientes) ? data.pacientes : [],
+      triagens: Array.isArray(data.triagens) ? data.triagens : [],
+      consultas: Array.isArray(data.consultas) ? data.consultas : []
     };
   } catch (error) {
     console.error("Erro ao ler banco de dados:", error);
@@ -57,20 +57,43 @@ app.get("/", (req, res) => {
 
 // LOGIN
 app.post("/login", (req, res) => {
-  const db = readDB();
+  try {
+    const db = readDB();
 
-  const user = db.usuarios.find(u =>
-    u.usuario === req.body.usuario &&
-    u.senha === req.body.senha
-  );
+    const usuario = String(req.body.usuario || "").trim();
+    const senha = String(req.body.senha || "");
 
-  if (!user) {
-    return res.status(401).json({
-      erro: "Login inválido"
+    console.log("Tentativa de login:", usuario);
+    console.log(
+      "Usuários encontrados:",
+      db.usuarios.map(u => u.usuario)
+    );
+
+    const user = db.usuarios.find(u =>
+      String(u.usuario || "").trim() === usuario &&
+      String(u.senha || "") === senha
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        erro: "Login inválido"
+      });
+    }
+
+    console.log("Login realizado:", usuario);
+
+    res.json({
+      usuario: user.usuario,
+      tipo: user.tipo
+    });
+
+  } catch (error) {
+    console.error("Erro no login:", error);
+
+    res.status(500).json({
+      erro: "Erro interno ao realizar login"
     });
   }
-
-  res.json(user);
 });
 
 // ATENDIMENTO
