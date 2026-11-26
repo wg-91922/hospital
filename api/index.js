@@ -1,3 +1,4 @@
+
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -5,11 +6,13 @@ const cors = require("cors");
 
 const app = express();
 
+// CONFIGURAÇÕES
 app.use(express.json());
 app.use(cors());
 
 app.use(express.static(path.join(__dirname, "../frontend")));
 
+// BANCO DE DADOS
 const DB_FILE = path.join(__dirname, "db.json");
 
 function readDB() {
@@ -22,12 +25,35 @@ function readDB() {
     };
   }
 
-  return JSON.parse(fs.readFileSync(DB_FILE));
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(DB_FILE, "utf8")
+    );
+
+    return {
+      usuarios: data.usuarios || [],
+      pacientes: data.pacientes || [],
+      triagens: data.triagens || [],
+      consultas: data.consultas || []
+    };
+  } catch (error) {
+    console.error("Erro ao ler banco de dados:", error);
+    throw error;
+  }
 }
 
 function writeDB(data) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+  fs.writeFileSync(
+    DB_FILE,
+    JSON.stringify(data, null, 2),
+    "utf8"
+  );
 }
+
+// ROTA INICIAL
+app.get("/", (req, res) => {
+  res.send("Sistema Hospitalar funcionando!");
+});
 
 // LOGIN
 app.post("/login", (req, res) => {
@@ -71,10 +97,11 @@ app.post("/triagem", (req, res) => {
   const db = readDB();
 
   let risco = req.body.risco;
+  const temperatura = Number(req.body.temperatura);
 
-  if (req.body.temperatura >= 39) {
+  if (temperatura >= 39) {
     risco = "vermelho";
-  } else if (req.body.temperatura >= 38) {
+  } else if (temperatura >= 38) {
     risco = "amarelo";
   } else if (!risco) {
     risco = "verde";
@@ -104,7 +131,7 @@ app.get("/triagens", (req, res) => {
   res.json(db.triagens);
 });
 
-// IMPLEMENTADO: rota com lista fixa de medicações
+// LISTA DE MEDICAÇÕES
 app.get("/lista-medicacoes", (req, res) => {
   res.json([
     "Dipirona",
@@ -145,5 +172,14 @@ app.get("/medicacoes", (req, res) => {
   res.json(db.consultas);
 });
 
-// START
+// INICIALIZAÇÃO DO SERVIDOR
+const PORT = process.env.PORT || 3000;
+
+if (require.main === module) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Sistema Hospitalar rodando na porta ${PORT}`);
+  });
+}
+
+// EXPORTAÇÃO
 module.exports = app;
