@@ -37,12 +37,13 @@ async function atualizar() {
     const r = await fetch("/tv/chamada");
     const d = await r.json();
     const c = d.chamada;
-    if (c) {
-      document.getElementById("nomePaciente").textContent = c.paciente;
-      document.getElementById("guiche").textContent = c.localTipo + " " + c.localNumero;
-      const hist = document.getElementById("historico");
-      if (hist) hist.innerHTML = (d.historico||[]).map(h => `<div>${h.paciente} - ${h.localTipo} ${h.localNumero}</div>`).join("");
-    }
+    if (!c) return;
+    const nomeEl = document.getElementById("patient-name");
+    nomeEl.textContent = c.paciente;
+    nomeEl.classList.remove("aguardando");
+    document.getElementById("local-tipo").textContent = c.localTipo;
+    document.getElementById("local-numero").textContent = c.localNumero;
+    document.getElementById("history-list").innerHTML = (d.historico || []).map(h => `<li>${h.paciente} - ${h.localTipo} ${h.localNumero}</li>`).join("");
   } catch(e) {}
 }
 setInterval(atualizar, 2000);
