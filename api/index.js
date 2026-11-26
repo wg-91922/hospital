@@ -64,6 +64,18 @@ function writeDB(data) {
   );
 }
 
+// Baixa o estoque pelo nome do medicamento
+function baixarEstoque(db, nomeMedicacao, quantidade) {
+  if (!nomeMedicacao) return null;
+  const qtd = Number(quantidade || 1);
+  const item = db.estoque.find(x =>
+    String(x.nome || "").trim().toLowerCase() === String(nomeMedicacao).trim().toLowerCase()
+  );
+  if (!item) return null;
+  item.quantidade = Math.max(0, Number(item.quantidade || 0) - qtd);
+  return item;
+}
+
 // ======================================
 // ROTA INICIAL
 // ======================================
@@ -233,31 +245,79 @@ app.get("/lista-medicacoes", (req, res) => {
 });
 
 // ======================================
-// CONSULTA
+// CONSULTA - SALVA E BAIXA ESTOQUE
 // ======================================
 
 app.post("/consulta", (req, res) => {
   try {
     const db = readDB();
 
+    const quantidade = Number(req.body.quantidade || 1);
+
     const consulta = {
       id: Date.now(),
       paciente: req.body.paciente,
       diagnostico: req.body.diagnostico,
       medicacao: req.body.medicacao,
+      quantidade,
       obs: req.body.obs,
       createdAt: new Date()
     };
 
     db.consultas.push(consulta);
+
+    // AQUI QUE DIMINUI NO ESTOQUE
+    const itemBaixado = baixarEstoque(db, req.body.medicacao, quantidade);
+
     writeDB(db);
 
-    res.json(consulta);
+    res.json({
+      consulta,
+      estoqueAtual: itemBaixado ? itemBaixado.quantidade : 0,
+      unidade: itemBaixado ? itemBaixado.unidade : "unidades",
+      mensagem: itemBaixado ? `Baixado ${quantidade} ${itemBaixado.unidade}. Restam ${itemBaixado.quantidade}.` : "Consulta salva, medicamento não encontrado no estoque."
+    });
 
   } catch (error) {
     console.error("Erro na consulta:", error);
     res.status(500).json({
       erro: "Erro ao registrar consulta"
+    });
+  }
+});
+
+// ======================================
+// ALTA - TAMBÉM BAIXA SE VIER MEDICAMENTO
+// ======================================
+
+app.post("/alta", (req, res) => {
+  try {
+    const db = readDB();
+    const nomePaciente = String(req.body.paciente || "").trim();
+
+    // Se vier medicamento na alta, baixa também (pra não ficar sem baixar se pular o Salvar)
+    let itemBaixado = null;
+    if (req.body.medicacao) {
+      itemBaixado = baixarEstoque(db, req.body.medicacao, Number(req.body.quantidade || 1));
+    }
+
+    const triagem = db.triagens.find(t => String(t.nome || "").trim().toLowerCase() === nomePaciente.toLowerCase());
+    if (triagem) {
+      triagem.status = "alta";
+    }
+
+    writeDB(db);
+
+    res.json({
+      ok: true,
+      paciente: nomePaciente,
+      estoqueAtual: itemBaixado ? itemBaixado.quantidade : null
+    });
+
+  } catch (error) {
+    console.error("Erro na alta:", error);
+    res.status(500).json({
+      erro: "Erro ao registrar alta"
     });
   }
 });
