@@ -1,0 +1,241 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Hospital Pro - Login</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #eaf4ff, #f4f8fc);
+            color: #243447;
+        }
+
+        .topo {
+            background: #087f8c;
+            color: white;
+            padding: 24px 20px;
+            box-shadow: 0 3px 12px #00000015;
+        }
+
+        .logo {
+            max-width: 1000px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .icone {
+            font-size: 38px;
+        }
+
+        .logo h1 {
+            font-size: 26px;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .container {
+            width: calc(100% - 32px);
+            max-width: 400px;
+            margin: 70px auto;
+            padding: 32px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px #12345618;
+        }
+
+        .container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #087f8c;
+            font-size: 23px;
+        }
+
+        .container input {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .container input:focus {
+            border-color: #087f8c;
+            box-shadow: 0 0 0 3px #087f8c20;
+        }
+
+        .container button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 7px;
+            background: #087f8c;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .container button:hover {
+            background: #066570;
+        }
+
+        #mensagem {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+            color: #b42318;
+        }
+
+        .rodape {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topo">
+        <div class="logo">
+            <span class="icone">🏥</span>
+
+            <div>
+                <h1>Hospital Pro</h1>
+                <p>Cuidando da vida com excelência</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <h2>🏥 Sistema Hospitalar</h2>
+
+        <form id="formLogin">
+            <input
+                id="usuario"
+                name="usuario"
+                type="text"
+                placeholder="Usuário"
+                autocomplete="username"
+                required
+            >
+
+            <input
+                id="senha"
+                name="senha"
+                type="password"
+                placeholder="Senha"
+                autocomplete="current-password"
+                required
+            >
+
+            <button type="submit">Entrar</button>
+
+            <p id="mensagem" role="status"></p>
+        </form>
+    </main>
+
+    <footer class="rodape">
+        Hospital Pro &copy; 2026
+    </footer>
+
+    <script>
+        "use strict";
+
+        const formLogin = document.getElementById("formLogin");
+        const campoUsuario = document.getElementById("usuario");
+        const campoSenha = document.getElementById("senha");
+        const mensagem = document.getElementById("mensagem");
+
+        // Login conectado ao servidor do sistema.
+        formLogin.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            mensagem.style.color = "#b45309";
+            mensagem.textContent = "Verificando acesso...";
+
+            try {
+                const resposta = await fetch(
+                    "http://localhost:3000/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            usuario: campoUsuario.value.trim(),
+                            senha: campoSenha.value
+                        })
+                    }
+                );
+
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    mensagem.style.color = "#b42318";
+                    mensagem.textContent =
+                        dados.mensagem ||
+                        dados.erro ||
+                        "Usuário ou senha inválidos.";
+                    return;
+                }
+
+                mensagem.style.color = "#087f5b";
+                mensagem.textContent = "Login realizado!";
+
+                if (dados.tipo === "triagem") {
+                    window.location.href = "triagem.html";
+                } else if (dados.tipo === "medico") {
+                    window.location.href = "medico.html";
+                } else if (dados.tipo === "atendimento") {
+                    window.location.href = "atendimento.html";
+                } else {
+                    mensagem.style.color = "#b45309";
+                    mensagem.textContent =
+                        "Login aceito, mas o tipo de acesso não foi reconhecido.";
+                }
+
+            } catch (erro) {
+                console.error("Erro no login:", erro);
+
+                mensagem.style.color = "#b42318";
+                mensagem.textContent =
+                    "Não foi possível conectar ao servidor. Verifique se ele está ligado.";
+            }
+        });
+
+        // Atalho Ctrl + Alt + A para abrir a administração.
+        document.addEventListener("keydown", function (event) {
+            const teclaA = event.key.toLowerCase() === "a";
+
+            if (event.ctrlKey && event.altKey && teclaA) {
+                event.preventDefault();
+                window.location.href = "admin.html";
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,794 @@
+
+/* =====================================
+   HOSPITAL PRO - ALMOXARIFADO
+   ESTILO GERAL
+===================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary: #5145cd;
+    --primary-dark: #3f35aa;
+    --primary-light: #eeedff;
+
+    --dark: #20243a;
+    --text: #50566b;
+    --muted: #8990a4;
+
+    --background: #f4f6fb;
+    --white: #ffffff;
+    --border: #e7eaf2;
+
+    --green: #16a36a;
+    --green-light: #e4f7ee;
+
+    --orange: #e99a22;
+    --orange-light: #fff3dc;
+
+    --red: #e34d59;
+    --red-light: #ffeaec;
+
+    --shadow: 0 5px 20px rgba(36, 44, 75, 0.06);
+    --radius: 14px;
+}
+
+/* RESET */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--background);
+    color: var(--dark);
+    min-height: 100vh;
+    font-size: 14px;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+}
+
+/* =====================================
+   NAVBAR
+===================================== */
+
+.navbar {
+    width: 100%;
+    min-height: 78px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 12px 5%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.025);
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.logo-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #5145cd, #8377ff);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-shadow: 0 5px 12px rgba(81,69,205,0.2);
+}
+
+.logo-icon::before {
+    content: "+";
+    color: white;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.nav-brand h1 {
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--dark);
+    text-transform: capitalize;
+}
+
+.nav-brand span {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-pill {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 10px 16px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.btn-nav {
+    text-decoration: none;
+    background: #fff0f1;
+    color: #dc4652;
+    padding: 10px 19px;
+    border-radius: 9px;
+    font-weight: 700;
+    transition: .2s;
+}
+
+.btn-nav:hover {
+    background: #dc4652;
+    color: white;
+}
+
+/* =====================================
+   CONTAINER
+===================================== */
+
+.container {
+    max-width: 1450px;
+    margin: 30px auto;
+    padding: 0 25px;
+}
+
+/* =====================================
+   ALERTA DE ESTOQUE
+===================================== */
+
+.alerta-estoque {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    background: var(--orange-light);
+    color: #a66a0d;
+
+    border: 1px solid #f7dfae;
+    border-left: 5px solid var(--orange);
+
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-bottom: 22px;
+
+    font-size: 13px;
+}
+
+.alerta-estoque strong {
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+/* =====================================
+   ESTATÍSTICAS
+===================================== */
+
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: var(--white);
+    padding: 23px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    transition: .2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(36,44,75,.09);
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 7px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.stat-icon.green {
+    background: var(--green-light);
+    color: var(--green);
+}
+
+.stat-icon.orange {
+    background: var(--orange-light);
+    color: var(--orange);
+}
+
+.stat-icon.red {
+    background: var(--red-light);
+    color: var(--red);
+}
+
+/* =====================================
+   GRID PRINCIPAL
+===================================== */
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1.35fr;
+    gap: 22px;
+    align-items: start;
+}
+
+/* =====================================
+   CARDS
+===================================== */
+
+.card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--border);
+}
+
+.card-header h2 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--dark);
+    text-transform: capitalize;
+}
+
+.card-body {
+    padding: 22px;
+}
+
+/* =====================================
+   ABAS
+===================================== */
+
+.entrada-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 18px 20px 5px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 10px;
+    border: none;
+    border-radius: 8px;
+
+    background: #f1f2f8;
+    color: var(--muted);
+
+    font-size: 12px;
+    font-weight: 700;
+
+    cursor: pointer;
+    transition: .2s;
+}
+
+.tab-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 10px rgba(81,69,205,.2);
+}
+
+/* =====================================
+   FORMULÁRIOS
+===================================== */
+
+#painelNovo,
+#painelRepor {
+    padding: 20px 22px 25px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+
+    color: var(--dark);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.form-group small {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 11px;
+}
+
+.form-control {
+    width: 100%;
+    height: 45px;
+
+    padding: 0 13px;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+
+    background: #fafbfe;
+    color: var(--dark);
+
+    outline: none;
+    font-size: 13px;
+
+    transition: .2s;
+}
+
+.form-control:focus {
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(81,69,205,.09);
+}
+
+.form-control::placeholder {
+    color: #a9afbd;
+}
+
+select.form-control {
+    cursor: pointer;
+}
+
+/* =====================================
+   BOTÕES
+===================================== */
+
+button {
+    cursor: pointer;
+    transition: .2s;
+}
+
+.btn-full {
+    width: 100%;
+    min-height: 46px;
+    border: none;
+    border-radius: 9px;
+
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.btn-purble {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-purble:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 5px 15px rgba(81,69,205,.22);
+    transform: translateY(-1px);
+}
+
+.btn-sm {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.btn-secondary {
+    background: #f0f1f7;
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: #e3e5ef;
+}
+
+.btn-success {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+.btn-success:hover {
+    background: #118453;
+}
+
+/* =====================================
+   HISTÓRICO
+===================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 30px 15px;
+    color: var(--muted);
+}
+
+.empty-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    opacity: .7;
+}
+
+.empty-state p {
+    font-size: 12px;
+}
+
+/* =====================================
+   PESQUISA
+===================================== */
+
+.search-bar {
+    margin-bottom: 17px;
+}
+
+.search-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 15px;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+
+    background: #fafbfe;
+    outline: none;
+
+    font-size: 13px;
+}
+
+.search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(81,69,205,.08);
+}
+
+/* =====================================
+   FILTROS
+===================================== */
+
+.filter-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.chip {
+    padding: 8px 13px;
+    border-radius: 30px;
+
+    background: #f0f1f7;
+    color: var(--text);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    cursor: pointer;
+    transition: .2s;
+}
+
+.chip:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.chip.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* =====================================
+   TABELA DE ESTOQUE
+===================================== */
+
+.estoque-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 580px;
+}
+
+.estoque-table thead {
+    background: #f7f8fc;
+}
+
+.estoque-table th {
+    padding: 14px 12px;
+    text-align: left;
+
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.estoque-table td {
+    padding: 16px 12px;
+    font-size: 12px;
+    color: var(--text);
+    border-bottom: 1px solid #f0f1f6;
+}
+
+.estoque-table tbody tr {
+    transition: .2s;
+}
+
+.estoque-table tbody tr:hover {
+    background: #fafaff;
+}
+
+.estoque-table td:first-child {
+    color: var(--dark);
+    font-weight: 700;
+}
+
+.estoque-table td:last-child {
+    text-align: right;
+}
+
+/* =====================================
+   MODAL
+===================================== */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(20,24,45,.55);
+    backdrop-filter: blur(4px);
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    z-index: 999;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 430px;
+
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+
+    box-shadow: 0 15px 50px rgba(0,0,0,.2);
+
+    animation: aparecer .25s ease;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    flex: 1;
+}
+
+/* =====================================
+   TOAST / NOTIFICAÇÕES
+===================================== */
+
+.toast {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+
+    padding: 15px 22px;
+    border-radius: 10px;
+
+    background: var(--dark);
+    color: white;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    box-shadow: 0 8px 25px rgba(0,0,0,.15);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+
+    transition: .3s;
+    z-index: 2000;
+}
+
+.toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.toast-success {
+    background: var(--green);
+}
+
+.toast-error {
+    background: var(--red);
+}
+
+/* =====================================
+   ANIMAÇÃO
+===================================== */
+
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =====================================
+   RESPONSIVIDADE
+===================================== */
+
+@media (max-width: 1000px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .navbar {
+        padding: 12px 15px;
+        gap: 10px;
+    }
+
+    .nav-brand {
+        gap: 8px;
+    }
+
+    .logo-icon {
+        width: 38px;
+        height: 38px;
+    }
+
+    .nav-brand h1 {
+        font-size: 16px;
+    }
+
+    .nav-brand span {
+        font-size: 9px;
+    }
+
+    .nav-user {
+        gap: 7px;
+    }
+
+    .user-pill {
+        padding: 8px;
+        font-size: 10px;
+    }
+
+    .btn-nav {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
+    .container {
+        margin: 18px auto;
+        padding: 0 12px;
+    }
+
+    .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 15px 12px;
+    }
+
+    .stat-value {
+        font-size: 23px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 8px;
+    }
+
+    .card-header {
+        padding: 16px;
+    }
+
+    .card-header h2 {
+        font-size: 13px;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    #painelNovo,
+    #painelRepor {
+        padding: 16px;
+    }
+
+    .entrada-tabs {
+        padding: 15px 15px 5px;
+    }
+
+    .tab-btn {
+        font-size: 10px;
+        padding: 11px 5px;
+    }
+
+    .modal-box {
+        padding: 20px;
+    }
+}

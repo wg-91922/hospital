@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triagem Hospitalar</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #f1f3f6;
+    color: #26364a;
+}
+
+.container {
+    max-width: 1150px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.08);
+}
+
+h2 {
+    font-size: 30px;
+    margin-bottom: 30px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 17px;
+    margin-bottom: 14px;
+    border: 1px solid #d4d9e1;
+    border-radius: 13px;
+    font-size: 17px;
+    background: #fafafa;
+}
+
+textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+button {
+    border: none;
+    padding: 15px 22px;
+    border-radius: 12px;
+    color: white;
+    font-weight: bold;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.btn-salvar {
+    width: 100%;
+    background: #7928e8;
+}
+
+.btn-telao {
+    background: #147d75;
+}
+
+.btn-salvar:hover {
+    background: #621bc4;
+}
+
+.btn-telao:hover {
+    background: #0e655f;
+}
+
+#resultado {
+    padding: 12px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
+.verde {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.amarelo {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.vermelho {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.lista {
+    margin-top: 40px;
+}
+
+.paciente {
+    background: #f8fafc;
+    border: 1px solid #dce2ea;
+    border-left: 6px solid #7928e8;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.paciente h3 {
+    margin: 0 0 10px;
+    font-size: 21px;
+}
+
+.paciente p {
+    margin: 7px 0;
+}
+
+.status {
+    font-weight: bold;
+    color: #147d75;
+}
+
+.mensagem {
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 8px;
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.topo a {
+    text-decoration: none;
+    background: #7928e8;
+    color: white;
+    padding: 13px 18px;
+    border-radius: 9px;
+    font-weight: bold;
+}
+
+@media(max-width:600px) {
+    .container {
+        margin: 10px;
+        padding: 18px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="topo">
+        <h2>🏥 Triagem Hospitalar</h2>
+        <a href="/tv.html" target="_blank">📺 IR PARA O TELÃO</a>
+    </div>
+
+    <form id="formTriagem">
+
+        <input id="nome" placeholder="Nome do paciente" required>
+
+        <select id="sintoma" required>
+            <option value="">Selecione o sintoma</option>
+            <option value="dor_leve">Dor leve</option>
+            <option value="resfriado">Resfriado</option>
+            <option value="coriza">Coriza</option>
+            <option value="tosse">Tosse</option>
+            <option value="febre">Febre</option>
+            <option value="vomito">Vômito</option>
+            <option value="diarreia">Diarreia</option>
+            <option value="falta_ar_moderada">Falta de ar moderada</option>
+            <option value="falta_ar_grave">Falta de ar grave</option>
+            <option value="infarto">Suspeita de infarto</option>
+            <option value="avc">Suspeita de AVC</option>
+            <option value="convulsao">Convulsão</option>
+            <option value="hemorragia">Hemorragia</option>
+        </select>
+
+        <input id="temp" type="number" step="0.1" placeholder="Temperatura">
+
+        <input id="alergia" placeholder="Alergias">
+
+        <textarea id="observacao" placeholder="Observações"></textarea>
+
+        <div id="resultado"></div>
+
+        <button type="submit" class="btn-salvar">
+            Salvar Triagem
+        </button>
+
+    </form>
+
+    <section class="lista">
+
+        <h2>📋 Pacientes da Triagem</h2>
+
+        <div id="listaPacientes">
+            Carregando pacientes...
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+
+// NOME VINDO DO ATENDIMENTO
+const parametros = new URLSearchParams(window.location.search);
+const nomePaciente = parametros.get("nome");
+
+if (nomePaciente) {
+    document.getElementById("nome").value = nomePaciente;
+}
+
+// CLASSIFICAÇÃO ORIGINAL
+function classificarRisco(sintoma, temperatura) {
+
+    const vermelhos = [
+        "infarto",
+        "avc",
+        "convulsao",
+        "hemorragia",
+        "falta_ar_grave"
+    ];
+
+    const amarelos = [
+        "febre",
+        "vomito",
+        "diarreia",
+        "falta_ar_moderada"
+    ];
+
+    if (temperatura >= 39) {
+        return "vermelho";
+    }
+
+    if (vermelhos.includes(sintoma)) {
+        return "vermelho";
+    }
+
+    if (amarelos.includes(sintoma)) {
+        return "amarelo";
+    }
+
+    return "verde";
+}
+
+// SALVAR TRIAGEM
+document.getElementById("formTriagem").addEventListener("submit", salvar);
+
+async function salvar(event) {
+
+    event.preventDefault();
+
+    const nome = document.getElementById("nome").value.trim();
+    const sintoma = document.getElementById("sintoma").value;
+    const temperatura = Number(document.getElementById("temp").value);
+    const alergia = document.getElementById("alergia").value;
+    const observacao = document.getElementById("observacao").value;
+
+    const risco = classificarRisco(sintoma, temperatura);
+
+    try {
+
+        const resposta = await fetch("/triagem", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                nome,
+                sintoma,
+                temperatura,
+                alergia,
+                observacao,
+                risco
+            })
+        });
+
+        const data = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(data.erro || "Erro ao salvar triagem.");
+        }
+
+        const resultado = document.getElementById("resultado");
+
+        resultado.className = risco;
+        resultado.textContent = "Classificação registrada: " + risco.toUpperCase();
+
+        alert("Triagem salva com sucesso!");
+
+        document.getElementById("formTriagem").reset();
+
+        await carregarTriagens();
+
+    } catch (erro) {
+        console.error(erro);
+        alert(erro.message);
+    }
+}
+
+// CARREGAR PACIENTES SALVOS
+async function carregarTriagens() {
+
+    const lista = document.getElementById("listaPacientes");
+
+    try {
+
+        const resposta = await fetch("/triagens", {
+            cache: "no-store"
+        });
+
+        const pacientes = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error("Não foi possível carregar as triagens.");
+        }
+
+        lista.innerHTML = "";
+
+        if (!pacientes.length) {
+            lista.innerHTML = "<p>Nenhum paciente cadastrado na triagem.</p>";
+            return;
+        }
+
+        pacientes.forEach(paciente => {
+
+            const card = document.createElement("div");
+            card.className = "paciente";
+
+            const titulo = document.createElement("h3");
+            titulo.textContent = "👤 " + paciente.nome;
+
+            const sintoma = document.createElement("p");
+            sintoma.textContent = "Sintoma: " + (paciente.sintoma || "Não informado");
+
+            const risco = document.createElement("p");
+            risco.textContent = "Classificação: " + (paciente.risco || "Não informado").toUpperCase();
+
+            const status = document.createElement("p");
+            status.className = "status";
+            status.textContent = "Status: " + (paciente.status || "Aguardando médico");
+
+            const botao = document.createElement("button");
+            botao.className = "btn-telao";
+
+            if (paciente.status === "chamado") {
+                botao.textContent = "📺 CHAMAR NOVAMENTE";
+            } else {
+                botao.textContent = "📺 CHAMAR NO TELÃO";
+            }
+
+            botao.addEventListener("click", () => chamarNoTelao(paciente.nome));
+
+            card.appendChild(titulo);
+            card.appendChild(sintoma);
+            card.appendChild(risco);
+            card.appendChild(status);
+            card.appendChild(botao);
+
+            lista.appendChild(card);
+        });
+
+    } catch (erro) {
+        console.error(erro);
+        lista.textContent = "Erro ao carregar pacientes. Verifique o servidor.";
+    }
+}
+
+// ENVIAR PACIENTE PARA O TELÃO
+async function chamarNoTelao(nome) {
+
+    const localNumero = prompt("Digite o número do guichê ou consultório:");
+
+    if (!localNumero || !localNumero.trim()) {
+        return;
+    }
+
+    try {
+
+        const resposta = await fetch("/tv/chamar", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                paciente: nome,
+                localTipo: "GUICHÊ",
+                localNumero: localNumero.trim()
+            })
+        });
+
+        const data = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(data.erro || "Erro ao chamar paciente.");
+        }
+
+        alert("Paciente chamado no telão!");
+
+        carregarTriagens();
+
+    } catch (erro) {
+        console.error(erro);
+        alert(erro.message);
+    }
+}
+
+// CARREGAR QUANDO ABRIR A PÁGINA
+carregarTriagens();
+
+</script>
+
+</body>
+</html>

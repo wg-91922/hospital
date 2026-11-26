@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medicações Prescritas</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 25px;
+      color: #1e293b;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+    }
+
+    .card {
+      background: #f8fafc;
+      padding: 18px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      margin: 15px 0;
+    }
+
+    .card h3 {
+      color: #0f766e;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2>💊 Medicações Prescritas</h2>
+
+  <div id="listaMedicacoes">Carregando consultas...</div>
+
+</div>
+
+<script>
+async function carregarMedicacoesPrescritas() {
+  const div = document.getElementById("listaMedicacoes");
+
+  try {
+    const resposta = await fetch("/medicacoes");
+
+    if (!resposta.ok) {
+      throw new Error("Erro ao buscar consultas.");
+    }
+
+    const data = await resposta.json();
+    div.innerHTML = "";
+
+    if (!data.length) {
+      div.innerHTML = "<p>Nenhuma medicação prescrita.</p>";
+      return;
+    }
+
+    data.slice().reverse().forEach(c => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const paciente = document.createElement("h3");
+      paciente.textContent = c.paciente;
+
+      const medicacao = document.createElement("p");
+      medicacao.textContent =
+        `Medicação: ${c.medicacao || "Não informada"}`;
+
+      const quantidade = document.createElement("p");
+      quantidade.textContent =
+        `Quantidade utilizada: ${c.quantidade || 0} ${c.unidade || "unidades"}`;
+
+      const diagnostico = document.createElement("p");
+      diagnostico.textContent =
+        `Diagnóstico: ${c.diagnostico || "Não informado"}`;
+
+      const obs = document.createElement("p");
+      obs.textContent =
+        `Observações: ${c.obs || "Nenhuma"}`;
+
+      const dataConsulta = document.createElement("p");
+      dataConsulta.textContent = c.createdAt
+        ? "Data: " + new Date(c.createdAt).toLocaleString("pt-BR")
+        : "";
+
+      card.append(
+        paciente,
+        medicacao,
+        quantidade,
+        diagnostico,
+        obs,
+        dataConsulta
+      );
+
+      div.appendChild(card);
+    });
+
+  } catch (erro) {
+    div.textContent = erro.message;
+  }
+}
+
+carregarMedicacoesPrescritas();
+</script>
+
+</body>
+</html>

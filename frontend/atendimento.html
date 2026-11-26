@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimento Hospitalar</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .painel-telao {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f4f0ff;
+            border-radius: 12px;
+        }
+
+        .painel-telao select,
+        .painel-telao button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-roxo {
+            background: #7928e8;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-verde {
+            background: #16803d;
+            color: white;
+            cursor: pointer;
+        }
+
+        .painel-telao button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #mensagem {
+            margin-top: 12px;
+            overflow-wrap: anywhere;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h2>Atendimento</h2>
+
+    <input id="nome" placeholder="Nome" required>
+    <input id="cpf" placeholder="CPF" required>
+    <input id="data" type="date">
+    <input id="sexo" placeholder="Sexo">
+    <input id="mae" placeholder="Nome da mãe">
+    <input id="estado" placeholder="Estado civil">
+    <input id="endereco" placeholder="Endereço">
+    <input id="telefone" placeholder="Telefone">
+    <input id="email" type="email" placeholder="Email">
+
+    <select id="tipo">
+        <option value="Convenio">Convênio</option>
+        <option value="Particular">Particular</option>
+    </select>
+
+    <button id="btnCadastrar" type="button" onclick="cadastrar()">
+        Cadastrar paciente
+    </button>
+
+    <section id="painelTelao" class="painel-telao">
+        <h3>Enviar para o Telão</h3>
+        <p id="pacienteSelecionado"></p>
+
+        <label for="guiche">Escolha o guichê:</label>
+
+        <select id="guiche">
+            <option value="1">Guichê 1</option>
+            <option value="2">Guichê 2</option>
+            <option value="3">Guichê 3</option>
+            <option value="4">Guichê 4</option>
+            <option value="5">Guichê 5</option>
+        </select>
+
+        <button id="btnTelao" class="btn-roxo" type="button"
+                onclick="enviarParaTelao()">
+            Enviar para o Telão
+        </button>
+
+        <button class="btn-verde" type="button" onclick="irParaTriagem()">
+            Continuar para Triagem
+        </button>
+
+        <p id="mensagem" role="status"></p>
+    </section>
+</div>
+
+<script>
+    let pacienteCadastrado = null;
+
+    async function cadastrar() {
+        const nome = document.getElementById("nome").value.trim();
+        const cpf = document.getElementById("cpf").value.trim();
+        const tipo = document.getElementById("tipo").value;
+
+        if (!nome || !cpf) {
+            alert("Preencha o nome e o CPF!");
+            return;
+        }
+
+        const botao = document.getElementById("btnCadastrar");
+        botao.disabled = true;
+
+        try {
+            const resposta = await fetch("/atendimento", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ nome, cpf, tipo })
+            });
+
+            const data = await resposta.json();
+
+            if (!resposta.ok) {
+                throw new Error(data.erro || "Erro ao cadastrar.");
+            }
+
+            pacienteCadastrado = data;
+
+            document.getElementById("pacienteSelecionado").textContent =
+                "Paciente: " + data.nome;
+
+            document.getElementById("painelTelao").style.display = "block";
+            document.getElementById("mensagem").textContent =
+                "Paciente cadastrado. Escolha o guichê.";
+
+        } catch (erro) {
+            alert(erro.message || "Erro ao cadastrar paciente.");
+        } finally {
+            botao.disabled = false;
+        }
+    }
+
+    async function enviarParaTelao() {
+        if (!pacienteCadastrado) {
+            alert("Cadastre um paciente primeiro.");
+            return;
+        }
+
+        const botao = document.getElementById("btnTelao");
+        const mensagem = document.getElementById("mensagem");
+
+        botao.disabled = true;
+        mensagem.textContent = "Enviando chamada...";
+
+        try {
+            const resposta = await fetch("/tv/chamar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    paciente: pacienteCadastrado.nome,
+                    localTipo: "GUICHÊ",
+                    localNumero: document.getElementById("guiche").value
+                })
+            });
+
+            const data = await resposta.json();
+
+            if (!resposta.ok) {
+                throw new Error(data.erro || "Não foi possível enviar.");
+            }
+
+            mensagem.textContent =
+                "Chamada enviada para o telão com sucesso!";
+
+        } catch (erro) {
+            mensagem.textContent = erro.message ||
+                "Erro ao enviar chamada para o telão.";
+        } finally {
+            botao.disabled = false;
+        }
+    }
+
+    function irParaTriagem() {
+        if (!pacienteCadastrado) {
+            alert("Cadastre um paciente primeiro.");
+            return;
+        }
+
+        window.location.href =
+            "triagem.html?nome=" +
+            encodeURIComponent(pacienteCadastrado.nome);
+    }
+</script>
+</body>
+</html>

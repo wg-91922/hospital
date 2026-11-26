@@ -1,0 +1,314 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Médico - Hospital Pro</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 25px;
+      color: #1e293b;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,.08);
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+
+    input, select, textarea {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin: 10px 0 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+
+    button {
+      border: none;
+      padding: 12px 18px;
+      margin: 5px;
+      border-radius: 7px;
+      background: #0f766e;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #115e59;
+    }
+
+    .risco {
+      font-weight: bold;
+    }
+
+    .mensagem {
+      padding: 12px;
+      border-radius: 7px;
+      margin: 12px 0;
+      display: none;
+    }
+
+    .sucesso { background: #dcfce7; color: #166534; }
+    .erro { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2>🩺 Painel Médico</h2>
+
+  <h3>Pacientes aguardando atendimento</h3>
+  <div id="triagens">Carregando pacientes...</div>
+
+  <hr>
+
+  <h3>Consulta</h3>
+
+  <label>Paciente</label>
+  <input id="paciente" placeholder="Selecione um paciente" readonly>
+
+  <label>Diagnóstico</label>
+  <input id="diagnostico" placeholder="Informe o diagnóstico">
+
+  <label>Medicação</label>
+  <select id="medicacao">
+    <option value="">Carregando medicamentos...</option>
+  </select>
+
+  <label>Quantidade utilizada</label>
+  <input id="quantidade" type="number" min="1" step="1" value="1">
+
+  <label>Observações</label>
+  <textarea id="obs" rows="4" placeholder="Observações da consulta"></textarea>
+
+  <div id="mensagem" class="mensagem"></div>
+
+  <button onclick="salvar()">Salvar consulta e baixar estoque</button>
+  <button onclick="irParaAlta()">Dar Alta</button>
+
+</div>
+
+<script>
+let triagensCarregadas = [];
+let pacienteSelecionado = null;
+
+function mostrarMensagem(texto, tipo) {
+  const el = document.getElementById("mensagem");
+  el.textContent = texto;
+  el.className = "mensagem " + tipo;
+  el.style.display = "block";
+}
+
+async function carregar() {
+  try {
+    const resposta = await fetch("/triagens");
+
+    if (!resposta.ok) throw new Error("Não foi possível carregar as triagens.");
+
+    triagensCarregadas = await resposta.json();
+
+    const div = document.getElementById("triagens");
+    div.innerHTML = "";
+
+    const aguardando = triagensCarregadas.filter(
+      t => t.status !== "alta" && t.status !== "atendido"
+    );
+
+    if (!aguardando.length) {
+      div.innerHTML = "<p>Nenhum paciente aguardando atendimento.</p>";
+      return;
+    }
+
+    aguardando.forEach(t => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const titulo = document.createElement("h3");
+      titulo.textContent = t.nome || "Paciente";
+
+      const sintoma = document.createElement("p");
+      sintoma.textContent = "Sintoma: " + (t.sintoma || "Não informado");
+
+      const temperatura = document.createElement("p");
+      temperatura.textContent = "Temperatura: " + (t.temperatura || "Não informada");
+
+      const risco = document.createElement("p");
+      risco.className = "risco";
+      risco.textContent = "Risco: " + (t.risco || "Não informado");
+
+      const alergia = document.createElement("p");
+      alergia.textContent = "Alergia: " + (t.alergia || "Não informada");
+
+      const observacao = document.createElement("p");
+      observacao.textContent = "Observação: " + (t.observacao || "Nenhuma");
+
+      const botao = document.createElement("button");
+      botao.textContent = "Atender";
+      botao.onclick = () => selecionar(t.id);
+
+      card.append(titulo, sintoma, temperatura, risco, alergia, observacao, botao);
+      div.appendChild(card);
+    });
+
+  } catch (erro) {
+    document.getElementById("triagens").textContent = erro.message;
+  }
+}
+
+function selecionar(id) {
+  const t = triagensCarregadas.find(item => item.id === id);
+  if (!t) return;
+
+  pacienteSelecionado = t;
+
+  document.getElementById("paciente").value = t.nome;
+  document.getElementById("obs").value = t.observacao || "";
+
+  if (t.alergia && t.alergia.toLowerCase() !== "nenhuma") {
+    alert("ATENÇÃO: alergia informada pelo paciente: " + t.alergia);
+  }
+
+  mostrarMensagem("Paciente selecionado.", "sucesso");
+}
+
+async function carregarMedicacoes() {
+  try {
+    const resposta = await fetch("/lista-medicacoes");
+
+    if (!resposta.ok) throw new Error("Erro ao carregar estoque.");
+
+    const medicamentos = await resposta.json();
+    const select = document.getElementById("medicacao");
+
+    select.innerHTML = '<option value="">Selecione a medicação</option>';
+
+    medicamentos.forEach(med => {
+      const option = document.createElement("option");
+      option.value = med.nome;
+      option.textContent =
+        `${med.nome} - Disponível: ${med.quantidade} ${med.unidade}`;
+      select.appendChild(option);
+    });
+
+  } catch (erro) {
+    mostrarMensagem(erro.message, "erro");
+  }
+}
+
+async function salvar() {
+  const paciente = document.getElementById("paciente").value;
+  const diagnostico = document.getElementById("diagnostico").value.trim();
+  const medicacao = document.getElementById("medicacao").value;
+  const quantidade = Number(document.getElementById("quantidade").value);
+  const obs = document.getElementById("obs").value.trim();
+
+  if (!paciente || !pacienteSelecionado) {
+    mostrarMensagem("Selecione um paciente clicando em Atender.", "erro");
+    return;
+  }
+
+  if (!medicacao) {
+    mostrarMensagem("Selecione uma medicação.", "erro");
+    return;
+  }
+
+  if (!Number.isInteger(quantidade) || quantidade <= 0) {
+    mostrarMensagem("Informe uma quantidade válida.", "erro");
+    return;
+  }
+
+  try {
+    const resposta = await fetch("/consulta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        paciente,
+        diagnostico,
+        medicacao,
+        quantidade,
+        obs
+      })
+    });
+
+    const data = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(data.erro || "Erro ao salvar consulta.");
+    }
+
+    mostrarMensagem(
+      `Consulta salva! Estoque restante: ${data.estoqueAtual} ${data.unidade}.`,
+      "sucesso"
+    );
+
+    document.getElementById("diagnostico").value = "";
+    document.getElementById("medicacao").value = "";
+    document.getElementById("quantidade").value = "1";
+    document.getElementById("obs").value = "";
+
+    pacienteSelecionado = null;
+    document.getElementById("paciente").value = "";
+
+    await carregarMedicacoes();
+
+  } catch (erro) {
+    mostrarMensagem(erro.message, "erro");
+  }
+}
+
+async function irParaAlta() {
+  const paciente = document.getElementById("paciente").value;
+
+  if (!paciente) {
+    mostrarMensagem("Selecione um paciente antes de dar alta.", "erro");
+    return;
+  }
+
+  try {
+    const resposta = await fetch("/alta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paciente })
+    });
+
+    const data = await resposta.json();
+
+    if (!resposta.ok) throw new Error(data.erro || "Erro ao registrar alta.");
+
+    window.location.href = "alta.html";
+
+  } catch (erro) {
+    mostrarMensagem(erro.message, "erro");
+  }
+}
+
+carregar();
+carregarMedicacoes();
+</script>
+
+</body>
+</html>
