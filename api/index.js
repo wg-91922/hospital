@@ -320,7 +320,26 @@ if (require.main === module) {
     );
   });
 }
+app.post("/tv/chamar", (req, res) => {
+  const db = readDB();
+  const chamada = {
+    id: Date.now(),
+    paciente: String(req.body.paciente || "").trim(),
+    localTipo: String(req.body.localTipo || "GUICHÊ").trim(),
+    localNumero: String(req.body.localNumero || "").trim(),
+    data: new Date().toISOString()
+  };
+  if (!chamada.paciente || !chamada.localNumero) return res.status(400).json({ erro: "Informe paciente e guichê." });
+  db.tvAtual = chamada;
+  db.tvHistorico = [chamada, ...(db.tvHistorico||[])].slice(0,20);
+  writeDB(db);
+  res.json({ mensagem: "Paciente enviado!", chamada });
+});
 
+app.get("/tv/chamada", (req, res) => {
+  const db = readDB();
+  res.json({ chamada: db.tvAtual || null, historico: db.tvHistorico || [] });
+});
 // ======================================
 // EXPORTAÇÃO
 // ======================================
