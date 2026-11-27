@@ -1,11 +1,12 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Hospital Pro - Login</title>
+    <title>WG Hospital - Login</title>
 
     <style>
         * {
@@ -33,11 +34,15 @@
             margin: auto;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 18px;
         }
 
-        .icone {
-            font-size: 38px;
+        /* IMAGEM DA LOGO */
+        .logo-img {
+            width: 85px;
+            height: 85px;
+            object-fit: contain;
+            display: block;
         }
 
         .logo h1 {
@@ -113,6 +118,26 @@
             color: #64748b;
             font-size: 12px;
         }
+
+        @media (max-width: 480px) {
+            .topo {
+                padding: 18px 15px;
+            }
+
+            .logo-img {
+                width: 65px;
+                height: 65px;
+            }
+
+            .logo h1 {
+                font-size: 21px;
+            }
+
+            .container {
+                margin: 45px auto;
+                padding: 25px;
+            }
+        }
     </style>
 </head>
 
@@ -120,12 +145,18 @@
 
     <header class="topo">
         <div class="logo">
-            <span class="icone">🏥</span>
+
+            <img
+                src="img/logo.png"
+                alt="Logo WG Hospital"
+                class="logo-img"
+            >
 
             <div>
-                <h1>Hospital Pro</h1>
+                <h1>WG HOSPITAL</h1>
                 <p>Cuidando da vida com excelência</p>
             </div>
+
         </div>
     </header>
 
@@ -133,6 +164,7 @@
         <h2>🏥 Sistema Hospitalar</h2>
 
         <form id="formLogin">
+
             <input
                 id="usuario"
                 name="usuario"
@@ -154,11 +186,12 @@
             <button type="submit">Entrar</button>
 
             <p id="mensagem" role="status"></p>
+
         </form>
     </main>
 
     <footer class="rodape">
-        Hospital Pro &copy; 2026
+        WG Hospital &copy; 2026
     </footer>
 
     <script>
@@ -169,7 +202,7 @@
         const campoSenha = document.getElementById("senha");
         const mensagem = document.getElementById("mensagem");
 
-        // Login conectado ao servidor do sistema.
+        // LOGIN CONECTADO AO SERVIDOR
         formLogin.addEventListener("submit", async function (event) {
             event.preventDefault();
 
@@ -177,19 +210,16 @@
             mensagem.textContent = "Verificando acesso...";
 
             try {
-                const resposta = await fetch(
-                    "/login",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            usuario: campoUsuario.value.trim(),
-                            senha: campoSenha.value
-                        })
-                    }
-                );
+                const resposta = await fetch("/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        usuario: campoUsuario.value.trim(),
+                        senha: campoSenha.value
+                    })
+                });
 
                 const dados = await resposta.json();
 
@@ -207,10 +237,13 @@
 
                 if (dados.tipo === "triagem") {
                     window.location.href = "triagem.html";
+
                 } else if (dados.tipo === "medico") {
                     window.location.href = "medico.html";
+
                 } else if (dados.tipo === "atendimento") {
                     window.location.href = "atendimento.html";
+
                 } else {
                     mensagem.style.color = "#b45309";
                     mensagem.textContent =
@@ -226,7 +259,7 @@
             }
         });
 
-        // Atalho Ctrl + Alt + A para abrir a administração.
+        // ATALHO CTRL + ALT + A PARA ABRIR A ADMINISTRAÇÃO
         document.addEventListener("keydown", function (event) {
             const teclaA = event.key.toLowerCase() === "a";
 
