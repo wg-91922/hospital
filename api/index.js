@@ -1,3 +1,4 @@
+
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -10,6 +11,7 @@ const app = express();
 // ======================================
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.use(express.static(
@@ -20,7 +22,6 @@ app.use(express.static(
 // BANCO DE DADOS
 // ======================================
 
-// O banco está dentro da pasta backend
 const DB_FILE = path.join(
   __dirname,
   "../backend/db.json"
@@ -41,13 +42,15 @@ function readDB() {
     );
 
     return {
+      ...data,
       usuarios: Array.isArray(data.usuarios) ? data.usuarios : [],
       pacientes: Array.isArray(data.pacientes) ? data.pacientes : [],
       triagens: Array.isArray(data.triagens) ? data.triagens : [],
       consultas: Array.isArray(data.consultas) ? data.consultas : [],
       tvAtual: data.tvAtual || null,
       tvHistorico: Array.isArray(data.tvHistorico) ? data.tvHistorico : [],
-      estoque: Array.isArray(data.estoque) ? data.estoque : []
+      estoque: Array.isArray(data.estoque) ? data.estoque : [],
+      entradas: Array.isArray(data.entradas) ? data.entradas : []
     };
 
   } catch (error) {
@@ -57,6 +60,12 @@ function readDB() {
 }
 
 function writeDB(data) {
+  const pasta = path.dirname(DB_FILE);
+
+  if (!fs.existsSync(pasta)) {
+    fs.mkdirSync(pasta, { recursive: true });
+  }
+
   fs.writeFileSync(
     DB_FILE,
     JSON.stringify(data, null, 2),
@@ -64,17 +73,86 @@ function writeDB(data) {
   );
 }
 
-// Baixa o estoque pelo nome do medicamento
-function baixarEstoque(db, nomeMedicacao, quantidade) {
-  if (!nomeMedicacao) return null;
-  const qtd = Number(quantidade || 1);
-  const item = db.estoque.find(x =>
-    String(x.nome || "").trim().toLowerCase() === String(nomeMedicacao).trim().toLowerCase()
-  );
-  if (!item) return null;
-  item.quantidade = Math.max(0, Number(item.quantidade || 0) - qtd);
-  return item;
-}
+// ======================================
+// USUÁRIOS - CADASTRAR E LISTAR
+// ======================================
+
+app.get("/usuarios", (req, res) => {
+  try {
+    const db = readDB();
+
+    const usuarios = db.usuarios.map(u => ({
+      id: u.id,
+      usuario: u.usuario,
+      tipo: u.tipo
+    }));
+
+    return res.json(usuarios);
+
+  } catch (error) {
+    console.error("Erro ao listar usuários:", error);
+
+    return res.status(500).json({
+      erro: "Erro ao buscar usuários"
+    });
+  }
+});
+
+app.post("/usuarios", (req, res) => {
+  try {
+    const db = readDB();
+    const b = req.body || {};
+
+    const usuario = String(b.usuario || "").trim();
+    const senha = String(b.senha || "");
+    const tipo = String(b.tipo || "").trim();
+
+    if (!usuario || !senha || !tipo) {
+      return res.status(400).json({
+        erro: "Preencha todos os campos."
+      });
+    }
+
+    const existente = db.usuarios.find(u =>
+      String(u.usuario || "").trim().toLowerCase() ===
+      usuario.toLowerCase()
+    );
+
+    if (existente) {
+      return res.status(409).json({
+        erro: "Esse usuário já está cadastrado."
+      });
+    }
+
+    const novoUsuario = {
+      id: Date.now(),
+      usuario,
+      senha,
+      tipo,
+      createdAt: new Date().toISOString()
+    };
+
+    db.usuarios.push(novoUsuario);
+    writeDB(db);
+
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: "Usuário cadastrado com sucesso!",
+      usuario: {
+        id: novoUsuario.id,
+        usuario: novoUsuario.usuario,
+        tipo: novoUsuario.tipo
+      }
+    });
+
+  } catch (error) {
+    console.error("Erro ao cadastrar usuário:", error);
+
+    return res.status(500).json({
+      erro: "Erro ao cadastrar usuário."
+    });
+  }
+});
 
 // ======================================
 // ROTA INICIAL
@@ -82,6 +160,17 @@ function baixarEstoque(db, nomeMedicacao, quantidade) {
 
 app.get("/", (req, res) => {
   res.send("Sistema Hospitalar funcionando!");
+});
+
+// ======================================
+// TESTE DO SERVIDOR
+// ======================================
+
+app.get("/health", (req, res) => {
+  res.json({
+    sucesso: true,
+    mensagem: "Servidor funcionando!"
+  });
 });
 
 // ======================================
@@ -101,11 +190,6 @@ app.post("/login", (req, res) => {
     );
 
     console.log("Tentativa de login:", usuario);
-
-    console.log(
-      "Usuários encontrados:",
-      db.usuarios.map(u => u.usuario)
-    );
 
     const user = db.usuarios.find(u =>
       String(u.usuario || "").trim() === usuario &&
@@ -158,6 +242,7 @@ app.post("/atendimento", (req, res) => {
 
   } catch (error) {
     console.error("Erro no atendimento:", error);
+
     res.status(500).json({
       erro: "Erro ao cadastrar paciente"
     });
@@ -202,6 +287,7 @@ app.post("/triagem", (req, res) => {
 
   } catch (error) {
     console.error("Erro na triagem:", error);
+
     res.status(500).json({
       erro: "Erro ao registrar triagem"
     });
@@ -219,6 +305,7 @@ app.get("/triagens", (req, res) => {
 
   } catch (error) {
     console.error("Erro ao listar triagens:", error);
+
     res.status(500).json({
       erro: "Erro ao buscar triagens"
     });
@@ -248,6 +335,26 @@ app.get("/lista-medicacoes", (req, res) => {
 // CONSULTA - SALVA E BAIXA ESTOQUE
 // ======================================
 
+function baixarEstoque(db, nomeMedicacao, quantidade) {
+  if (!nomeMedicacao) return null;
+
+  const qtd = Number(quantidade || 1);
+
+  const item = db.estoque.find(x =>
+    String(x.nome || "").trim().toLowerCase() ===
+    String(nomeMedicacao).trim().toLowerCase()
+  );
+
+  if (!item) return null;
+
+  item.quantidade = Math.max(
+    0,
+    Number(item.quantidade || 0) - qtd
+  );
+
+  return item;
+}
+
 app.post("/consulta", (req, res) => {
   try {
     const db = readDB();
@@ -266,8 +373,11 @@ app.post("/consulta", (req, res) => {
 
     db.consultas.push(consulta);
 
-    // AQUI QUE DIMINUI NO ESTOQUE
-    const itemBaixado = baixarEstoque(db, req.body.medicacao, quantidade);
+    const itemBaixado = baixarEstoque(
+      db,
+      req.body.medicacao,
+      quantidade
+    );
 
     writeDB(db);
 
@@ -275,11 +385,14 @@ app.post("/consulta", (req, res) => {
       consulta,
       estoqueAtual: itemBaixado ? itemBaixado.quantidade : 0,
       unidade: itemBaixado ? itemBaixado.unidade : "unidades",
-      mensagem: itemBaixado ? `Baixado ${quantidade} ${itemBaixado.unidade}. Restam ${itemBaixado.quantidade}.` : "Consulta salva, medicamento não encontrado no estoque."
+      mensagem: itemBaixado
+        ? `Baixado ${quantidade} ${itemBaixado.unidade}. Restam ${itemBaixado.quantidade}.`
+        : "Consulta salva, medicamento não encontrado no estoque."
     });
 
   } catch (error) {
     console.error("Erro na consulta:", error);
+
     res.status(500).json({
       erro: "Erro ao registrar consulta"
     });
@@ -287,21 +400,31 @@ app.post("/consulta", (req, res) => {
 });
 
 // ======================================
-// ALTA - TAMBÉM BAIXA SE VIER MEDICAMENTO
+// ALTA
 // ======================================
 
 app.post("/alta", (req, res) => {
   try {
     const db = readDB();
-    const nomePaciente = String(req.body.paciente || "").trim();
+    const nomePaciente = String(
+      req.body.paciente || ""
+    ).trim();
 
-    // Se vier medicamento na alta, baixa também (pra não ficar sem baixar se pular o Salvar)
     let itemBaixado = null;
+
     if (req.body.medicacao) {
-      itemBaixado = baixarEstoque(db, req.body.medicacao, Number(req.body.quantidade || 1));
+      itemBaixado = baixarEstoque(
+        db,
+        req.body.medicacao,
+        Number(req.body.quantidade || 1)
+      );
     }
 
-    const triagem = db.triagens.find(t => String(t.nome || "").trim().toLowerCase() === nomePaciente.toLowerCase());
+    const triagem = db.triagens.find(t =>
+      String(t.nome || "").trim().toLowerCase() ===
+      nomePaciente.toLowerCase()
+    );
+
     if (triagem) {
       triagem.status = "alta";
     }
@@ -316,6 +439,7 @@ app.post("/alta", (req, res) => {
 
   } catch (error) {
     console.error("Erro na alta:", error);
+
     res.status(500).json({
       erro: "Erro ao registrar alta"
     });
@@ -333,6 +457,7 @@ app.get("/medicacoes", (req, res) => {
 
   } catch (error) {
     console.error("Erro ao buscar medicações:", error);
+
     res.status(500).json({
       erro: "Erro ao buscar medicações"
     });
@@ -363,12 +488,28 @@ app.get("/status-banco", (req, res) => {
   }
 });
 
+// ======================================
+// EXCLUIR TRIAGEM
+// ======================================
+
 app.delete("/triagens/:id", (req, res) => {
-  const db = readDB();
-  const id = Number(req.params.id);
-  db.triagens = db.triagens.filter(t => t.id !== id);
-  writeDB(db);
-  res.json({ ok: true });
+  try {
+    const db = readDB();
+    const id = Number(req.params.id);
+
+    db.triagens = db.triagens.filter(t => t.id !== id);
+
+    writeDB(db);
+
+    res.json({ ok: true });
+
+  } catch (error) {
+    console.error("Erro ao excluir triagem:", error);
+
+    res.status(500).json({
+      erro: "Erro ao excluir triagem"
+    });
+  }
 });
 
 // ======================================
@@ -376,33 +517,70 @@ app.delete("/triagens/:id", (req, res) => {
 // ======================================
 
 app.post("/tv/chamar", (req, res) => {
-  const db = readDB();
-  const b = req.body || {};
-  const chamada = {
-    id: Date.now(),
-    paciente: String(b.paciente || b.nome || b.nomePaciente || "").trim(),
-    localTipo: String(b.localTipo || b.tipo || "GUICHÊ").trim(),
-    localNumero: String(b.localNumero || b.guiche || b.numero || b.local || "").trim(),
-    data: new Date().toISOString()
-  };
-  if (!chamada.paciente || !chamada.localNumero) {
-    return res.status(400).json({
-      erro: "Informe paciente e guichê.",
-      recebido: b
+  try {
+    const db = readDB();
+    const b = req.body || {};
+
+    const chamada = {
+      id: Date.now(),
+      paciente: String(
+        b.paciente || b.nome || b.nomePaciente || ""
+      ).trim(),
+      localTipo: String(
+        b.localTipo || b.tipo || "GUICHÊ"
+      ).trim(),
+      localNumero: String(
+        b.localNumero || b.guiche || b.numero || b.local || ""
+      ).trim(),
+      data: new Date().toISOString()
+    };
+
+    if (!chamada.paciente || !chamada.localNumero) {
+      return res.status(400).json({
+        erro: "Informe paciente e guichê.",
+        recebido: b
+      });
+    }
+
+    db.tvAtual = chamada;
+
+    db.tvHistorico = [
+      chamada,
+      ...(db.tvHistorico || [])
+    ].slice(0, 20);
+
+    writeDB(db);
+
+    res.json({
+      mensagem: "Paciente enviado!",
+      chamada
+    });
+
+  } catch (error) {
+    console.error("Erro ao chamar paciente:", error);
+
+    res.status(500).json({
+      erro: "Erro ao chamar paciente"
     });
   }
-  db.tvAtual = chamada;
-  db.tvHistorico = [chamada, ...(db.tvHistorico || [])].slice(0, 20);
-  writeDB(db);
-  res.json({ mensagem: "Paciente enviado!", chamada });
 });
 
 app.get("/tv/chamada", (req, res) => {
-  const db = readDB();
-  res.json({
-    chamada: db.tvAtual || null,
-    historico: db.tvHistorico || []
-  });
+  try {
+    const db = readDB();
+
+    res.json({
+      chamada: db.tvAtual || null,
+      historico: db.tvHistorico || []
+    });
+
+  } catch (error) {
+    console.error("Erro ao buscar chamada:", error);
+
+    res.status(500).json({
+      erro: "Erro ao buscar chamada"
+    });
+  }
 });
 
 // ======================================
@@ -413,8 +591,10 @@ app.get("/estoque", (req, res) => {
   try {
     const db = readDB();
     res.json(db.estoque);
+
   } catch (error) {
     console.error("Erro ao buscar estoque:", error);
+
     res.status(500).json({
       erro: "Erro ao buscar estoque"
     });
@@ -425,24 +605,34 @@ app.post("/estoque", (req, res) => {
   try {
     const db = readDB();
     const b = req.body || {};
+
     const item = {
       id: Date.now(),
-      nome: String(b.nome || b.medicamento || "").trim(),
-      quantidade: Number(b.quantidade || b.quantidadeInicial || 0),
+      nome: String(
+        b.nome || b.medicamento || ""
+      ).trim(),
+      quantidade: Number(
+        b.quantidade || b.quantidadeInicial || 0
+      ),
       unidade: String(b.unidade || "Comprimidos"),
       categoria: String(b.categoria || ""),
       createdAt: new Date().toISOString()
     };
+
     if (!item.nome) {
       return res.status(400).json({
         erro: "Informe o nome do medicamento"
       });
     }
+
     db.estoque.push(item);
     writeDB(db);
+
     res.json(item);
+
   } catch (error) {
     console.error("Erro ao registrar medicamento:", error);
+
     res.status(500).json({
       erro: "Erro ao registrar medicamento"
     });
@@ -450,26 +640,99 @@ app.post("/estoque", (req, res) => {
 });
 
 app.put("/estoque/:id", (req, res) => {
-  const db = readDB();
-  const item = db.estoque.find(x => x.id === Number(req.params.id));
-  if (!item) {
-    return res.status(404).json({
-      erro: "Não encontrado"
+  try {
+    const db = readDB();
+
+    const item = db.estoque.find(
+      x => x.id === Number(req.params.id)
+    );
+
+    if (!item) {
+      return res.status(404).json({
+        erro: "Não encontrado"
+      });
+    }
+
+    if (req.body.quantidade !== undefined) {
+      item.quantidade = Number(req.body.quantidade);
+    }
+
+    if (req.body.nome) item.nome = req.body.nome;
+    if (req.body.unidade) item.unidade = req.body.unidade;
+    if (req.body.categoria) item.categoria = req.body.categoria;
+
+    writeDB(db);
+
+    res.json(item);
+
+  } catch (error) {
+    console.error("Erro ao atualizar estoque:", error);
+
+    res.status(500).json({
+      erro: "Erro ao atualizar estoque"
     });
   }
-  if (req.body.quantidade !== undefined) item.quantidade = Number(req.body.quantidade);
-  if (req.body.nome) item.nome = req.body.nome;
-  if (req.body.unidade) item.unidade = req.body.unidade;
-  if (req.body.categoria) item.categoria = req.body.categoria;
-  writeDB(db);
-  res.json(item);
+});
+
+// Compatibilidade com páginas que usam PATCH
+app.patch("/estoque/:id", (req, res) => {
+  try {
+    const db = readDB();
+
+    const item = db.estoque.find(
+      x => x.id === Number(req.params.id)
+    );
+
+    if (!item) {
+      return res.status(404).json({
+        erro: "Não encontrado"
+      });
+    }
+
+    if (req.body.quantidade !== undefined) {
+      item.quantidade =
+        Number(item.quantidade || 0) +
+        Number(req.body.quantidade || 0);
+    }
+
+    if (req.body.nome) item.nome = req.body.nome;
+    if (req.body.unidade) item.unidade = req.body.unidade;
+    if (req.body.categoria) item.categoria = req.body.categoria;
+
+    writeDB(db);
+
+    res.json({
+      medicamento: item
+    });
+
+  } catch (error) {
+    console.error("Erro ao atualizar estoque:", error);
+
+    res.status(500).json({
+      erro: "Erro ao atualizar estoque"
+    });
+  }
 });
 
 app.delete("/estoque/:id", (req, res) => {
-  const db = readDB();
-  db.estoque = db.estoque.filter(x => x.id !== Number(req.params.id));
-  writeDB(db);
-  res.json({ ok: true });
+  try {
+    const db = readDB();
+
+    db.estoque = db.estoque.filter(
+      x => x.id !== Number(req.params.id)
+    );
+
+    writeDB(db);
+
+    res.json({ ok: true });
+
+  } catch (error) {
+    console.error("Erro ao remover medicamento:", error);
+
+    res.status(500).json({
+      erro: "Erro ao remover medicamento"
+    });
+  }
 });
 
 // ======================================
