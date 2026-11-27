@@ -74,7 +74,7 @@ function writeDB(data) {
 }
 
 // ======================================
-// USUÁRIOS - CADASTRAR E LISTAR
+// USUÁRIOS - LISTAR
 // ======================================
 
 app.get("/usuarios", (req, res) => {
@@ -97,6 +97,10 @@ app.get("/usuarios", (req, res) => {
     });
   }
 });
+
+// ======================================
+// USUÁRIOS - CADASTRAR
+// ======================================
 
 app.post("/usuarios", (req, res) => {
   try {
@@ -155,6 +159,45 @@ app.post("/usuarios", (req, res) => {
 });
 
 // ======================================
+// USUÁRIOS - EXCLUIR
+// ======================================
+
+app.delete("/usuarios/:id", (req, res) => {
+  try {
+    const db = readDB();
+    const identificador = String(req.params.id);
+
+    const quantidadeAntes = db.usuarios.length;
+
+    db.usuarios = db.usuarios.filter(u =>
+      String(u.id) !== identificador
+    );
+
+    if (db.usuarios.length === quantidadeAntes) {
+      return res.status(404).json({
+        sucesso: false,
+        erro: "Usuário não encontrado."
+      });
+    }
+
+    writeDB(db);
+
+    return res.json({
+      sucesso: true,
+      mensagem: "Usuário excluído com sucesso!"
+    });
+
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
+
+    return res.status(500).json({
+      sucesso: false,
+      erro: "Erro ao excluir usuário."
+    });
+  }
+});
+
+// ======================================
 // ROTA INICIAL
 // ======================================
 
@@ -201,8 +244,6 @@ app.post("/login", (req, res) => {
         erro: "Login inválido"
       });
     }
-
-    console.log("Login realizado:", usuario);
 
     return res.json({
       usuario: user.usuario,
@@ -332,7 +373,7 @@ app.get("/lista-medicacoes", (req, res) => {
 });
 
 // ======================================
-// CONSULTA - SALVA E BAIXA ESTOQUE
+// ESTOQUE - FUNÇÃO DE BAIXA
 // ======================================
 
 function baixarEstoque(db, nomeMedicacao, quantidade) {
@@ -354,6 +395,10 @@ function baixarEstoque(db, nomeMedicacao, quantidade) {
 
   return item;
 }
+
+// ======================================
+// CONSULTA - SALVA E BAIXA ESTOQUE
+// ======================================
 
 app.post("/consulta", (req, res) => {
   try {
